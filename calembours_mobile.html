@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Calembours</title>
+<style>
+:root {
+  --fond: #f6f4ef; --papier: #ffffff; --encre: #1d1d1f; --doux: #6b6b70; --trait: #1d1d1f;
+  --mot: #dbe8ff; --cur: #ffd84d; --faux: #c62828; --revele: #1f5fbf; --ok: #2e7d32;
+  --bouton: #ffffff; --bouton-bord: #c9c6bd; --barre: #1d1d1f; --barre-texte: #ffffff;
+  --c: 36px; /* recalculée en JS selon la largeur disponible */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #121214; --papier: #1e1e22; --encre: #ececf0; --doux: #9a9aa3; --trait: #8c8c96;
+    --mot: #29405f; --cur: #8a6d00; --faux: #ff6b6b; --revele: #7fb0ff; --ok: #66bb6a;
+    --bouton: #26262b; --bouton-bord: #44444c; --barre: #ececf0; --barre-texte: #121214;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--fond); color: var(--encre);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "DejaVu Sans", sans-serif;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
+header { padding: 12px 12px 8px; text-align: center; }
+h1 { margin: 0; font-size: clamp(1.25rem, 5vw, 1.8rem); font-weight: 700; }
+.outils { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 12px 0 0; max-width: 100%; }
+.outils button, .barre button {
+  font: inherit; font-size: 0.88rem; color: var(--encre); background: var(--bouton);
+  border: 1px solid var(--bouton-bord); border-radius: 8px; padding: 6px 10px; min-height: 40px;
+  cursor: pointer; touch-action: manipulation;
+}
+.outils button:active { transform: translateY(1px); }
+.barre {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 6px;
+  background: var(--barre); color: var(--barre-texte); padding: 8px; min-height: 56px;
+}
+.barre button { background: transparent; color: inherit; border-color: transparent; font-size: 1.3rem; padding: 4px 10px; }
+.barre .texte { flex: 1; font-size: 0.98rem; line-height: 1.3; cursor: pointer; }
+.barre .cle { font-weight: 700; margin-right: 6px; white-space: nowrap; }
+main { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; padding: 6px 8px 12px; }
+.jeu { max-width: 100%; }
+.zone { position: relative; max-width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0 auto; width: max-content; }
+.grille {
+  display: grid; grid-template-columns: repeat(var(--l), var(--c)); grid-template-rows: repeat(var(--h), var(--c));
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.case {
+  position: relative; background: var(--papier); outline: 1.5px solid var(--trait); outline-offset: -0.75px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  font-weight: 700; font-size: calc(var(--c) * 0.58); text-transform: uppercase;
+}
+.case .num { position: absolute; top: 1px; left: 2px; font-size: max(8px, calc(var(--c) * 0.27)); font-weight: 500; line-height: 1; color: var(--doux); }
+.case.mot { background: var(--mot); }
+.case.cur { background: var(--cur); }
+.case.faux { color: var(--faux); }
+.case.faux::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top right, transparent 47%, var(--faux) 48%, var(--faux) 52%, transparent 53%); opacity: .55; }
+.case.revele { color: var(--revele); }
+#saisie {
+  position: absolute; width: var(--c); height: var(--c); opacity: 0; border: 0; padding: 0; margin: 0;
+  font-size: 16px; color: transparent; background: transparent; caret-color: transparent; pointer-events: none;
+}
+.defs { display: grid; gap: 18px; grid-template-columns: 1fr; width: min(100%, 680px); }
+.defs h2 { font-size: 1.05rem; margin: 0 0 6px; text-transform: uppercase; letter-spacing: .06em; color: var(--doux); }
+.defs ol { list-style: none; margin: 0; padding: 0; }
+.defs li { padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; gap: 8px; }
+.defs li b { min-width: 1.8em; text-align: right; }
+.defs li.active { background: var(--mot); }
+.defs li.fini { color: var(--doux); }
+.defs li.fini span { text-decoration: line-through; text-decoration-color: var(--doux); }
+.message { text-align: center; font-weight: 700; color: var(--ok); min-height: 1.4em; margin: 6px 0 0; padding: 0 12px; }
+footer { text-align: center; color: var(--doux); font-size: .8rem; padding: 16px; }
+@media (min-width: 900px) {
+  .defs { grid-template-columns: 1fr 1fr; width: 560px; }
+  .defs section { max-height: calc(var(--h) * var(--c) + 40px); overflow: auto; }
+}
+@media print {
+  .outils, .barre, .message, footer { display: none; }
+  body { background: #fff; color: #000; }
+  .case { background: #fff !important; color: #000 !important; }
+}
+</style>
+</head>
+<body>
+<header><h1>Calembours</h1></header>
+<div class="barre" role="status" aria-live="polite">
+  <button type="button" id="prec" aria-label="Définition précédente">‹</button>
+  <div class="texte" id="def-courante"></div>
+  <button type="button" id="suiv" aria-label="Définition suivante">›</button>
+</div>
+<p class="message" id="message"></p>
+<main>
+  <div class="jeu">
+    <div class="zone" id="zone">
+      <div class="grille" id="grille" role="grid" aria-label="Grille de mots croisés"></div>
+      <input id="saisie" type="text" inputmode="text" autocomplete="off" autocorrect="off"
+             autocapitalize="characters" spellcheck="false" enterkeyhint="next" aria-label="Lettre">
+    </div>
+<div class="outils">
+      <button type="button" data-action="verifier-mot">Vérifier le mot</button>
+      <button type="button" data-action="verifier">Tout vérifier</button>
+      <button type="button" data-action="reveler-lettre">Indice</button>
+      <button type="button" data-action="reveler-mot">Révéler le mot</button>
+      <button type="button" data-action="effacer">Effacer</button>
+    </div>
+  </div>
+  <div class="defs">
+    <section><h2>Horizontalement</h2><ol id="defs-H"></ol></section>
+    <section><h2>Verticalement</h2><ol id="defs-V"></ol></section>
+  </div>
+</main>
+<footer>Touchez une case pour écrire ; touchez-la à nouveau pour changer de sens.</footer>
+<script>
+const DONNEES = {"largeur": 14, "hauteur": 15, "longueurs": false, "mots": [{"numero": 1, "sens": "H", "ligne": 0, "colonne": 7, "longueur": 6, "definition": "Propre ennemi : Charcuterie"}, {"numero": 5, "sens": "H", "ligne": 2, "colonne": 4, "longueur": 7, "definition": "Bousculer deux : Peintre"}, {"numero": 8, "sens": "H", "ligne": 4, "colonne": 0, "longueur": 9, "definition": "Logement idéal : Empereur"}, {"numero": 9, "sens": "H", "ligne": 5, "colonne": 11, "longueur": 3, "definition": "Brut ou doux : Travaux guerriers"}, {"numero": 11, "sens": "H", "ligne": 7, "colonne": 6, "longueur": 8, "definition": "Félin faisant le malin : Livre"}, {"numero": 14, "sens": "H", "ligne": 10, "colonne": 0, "longueur": 4, "definition": "Petite particule du 73 : Fromage"}, {"numero": 15, "sens": "H", "ligne": 10, "colonne": 5, "longueur": 9, "definition": "Inverse de deux califes : Grossier"}, {"numero": 16, "sens": "H", "ligne": 12, "colonne": 5, "longueur": 5, "definition": "Strigidae dans une casserole d'eau chaude : Animal"}, {"numero": 17, "sens": "H", "ligne": 14, "colonne": 3, "longueur": 10, "definition": "Si Bach est absent : Fromage"}, {"numero": 2, "sens": "V", "ligne": 0, "colonne": 8, "longueur": 9, "definition": "Femelle rongeur : Ville"}, {"numero": 3, "sens": "V", "ligne": 1, "colonne": 1, "longueur": 5, "definition": "Petit pas tapon : Oiseau"}, {"numero": 4, "sens": "V", "ligne": 1, "colonne": 5, "longueur": 6, "definition": "Monsieur moche constant : Littérature"}, {"numero": 6, "sens": "V", "ligne": 2, "colonne": 12, "longueur": 6, "definition": "A4 qui se noie : Administratif"}, {"numero": 7, "sens": "V", "ligne": 3, "colonne": 3, "longueur": 8, "definition": "Crustacé léger : Fruit de mer"}, {"numero": 10, "sens": "V", "ligne": 6, "colonne": 0, "longueur": 8, "definition": "Deux, trois : Arthur"}, {"numero": 12, "sens": "V", "ligne": 7, "colonne": 11, "longueur": 6, "definition": "Il n'était pas tôt : Batracien"}, {"numero": 13, "sens": "V", "ligne": 9, "colonne": 9, "longueur": 6, "definition": "Style musical préféré des médecins : Tenue"}], "solution": "LkFMTEVSQVpaT00uLi4uLi4uUy4uLi4uLi4uTi4uRC5VT0JJSC4uLi5FLi5SLk8uLi4uLi4uLklUTkFUTFVTTkkuRU1PVC4uVC5CLi4uLi5ELi5FLi5FLi5NLi4uLlIuLlJFUlRJUEFIQy4uVS4uSC5FLi4uRC4uWS5PLi5DRElDLi5SLi5SLkwuTi4uUC4uLkVUUkFQQU5PQi5BLi4uVC4uVi5QLlIuLlAuTklTU1VPUC4uRS4uLi4uLk0uLkIuLi5ILi5JTUFMQVMuLi4uLi4u", "id": "eae985157363"};
+(function () {
+  "use strict";
+  const L = DONNEES.largeur, Hh = DONNEES.hauteur, mots = DONNEES.mots;
+  const solution = DONNEES.solution ? [...atob(DONNEES.solution)].reverse().join("") : null;
+  const DELTA = { H: [0, 1], V: [1, 0] };
+  const NOM = { H: "Horizontal", V: "Vertical" };
+  const cle = (r, c) => r * L + c;
+  const stockage = "mots-croises:" + DONNEES.id;
+
+  document.documentElement.style.setProperty("--l", L);
+  document.documentElement.style.setProperty("--h", Hh);
+  // taille de case : toute la largeur sur téléphone (22 px minimum, sinon défilement), 44 px au plus
+  function dimensionner() {
+    const dispo = document.documentElement.clientWidth - 16;
+    const large = window.matchMedia("(min-width: 900px)").matches;
+    const c = Math.max(22, Math.min(44, Math.floor((large ? Math.min(dispo - 584, 720) : dispo) / L)));
+    document.documentElement.style.setProperty("--c", c + "px");
+  }
+  dimensionner();
+  window.addEventListener("resize", dimensionner);
+
+  // cases -> mots
+  const cases = new Map();
+  mots.forEach((m, i) => {
+    m.idx = i;
+    m.cases = [];
+    for (let k = 0; k < m.longueur; k++) {
+      const r = m.ligne + DELTA[m.sens][0] * k, c = m.colonne + DELTA[m.sens][1] * k;
+      const id = cle(r, c);
+      if (!cases.has(id)) cases.set(id, { r, c, mots: {}, lettre: "", etat: "" });
+      cases.get(id).mots[m.sens] = i;
+      m.cases.push(id);
+    }
+    cases.get(m.cases[0]).num = m.numero;
+  });
+  const ordre = [...mots].sort((a, b) => (a.sens === b.sens ? a.numero - b.numero : a.sens < b.sens ? -1 : 1));
+
+  // état sauvegardé
+  try {
+    const sauve = JSON.parse(localStorage.getItem(stockage) || "null");
+    if (sauve) for (const [id, v] of Object.entries(sauve)) {
+      const cs = cases.get(+id);
+      if (cs) { cs.lettre = v[0] || ""; cs.etat = v[1] === "r" ? "revele" : ""; }
+    }
+  } catch (e) { /* stockage indisponible */ }
+  function sauver() {
+    try {
+      const o = {};
+      cases.forEach((cs, id) => { if (cs.lettre) o[id] = cs.lettre + (cs.etat === "revele" ? "r" : ""); });
+      localStorage.setItem(stockage, JSON.stringify(o));
+    } catch (e) { /* ignoré */ }
+  }
+
+  // construction du DOM
+  const grille = document.getElementById("grille");
+  const saisie = document.getElementById("saisie");
+  const elements = new Map();
+  cases.forEach((cs, id) => {
+    const d = document.createElement("div");
+    d.className = "case";
+    d.style.gridRow = cs.r + 1;
+    d.style.gridColumn = cs.c + 1;
+    d.setAttribute("role", "gridcell");
+    if (cs.num) { const n = document.createElement("span"); n.className = "num"; n.textContent = cs.num; d.appendChild(n); }
+    const t = document.createElement("span"); t.className = "lettre"; d.appendChild(t);
+    d.addEventListener("pointerdown", (e) => { e.preventDefault(); toucher(id); });
+    elements.set(id, d);
+    grille.appendChild(d);
+  });
+  const lignesDef = new Map();
+  ordre.forEach((m) => {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = m.numero + ".";
+    const s = document.createElement("span");
+    s.textContent = (m.definition || "…") + (DONNEES.longueurs ? " (" + m.longueur + ")" : "");
+    li.append(b, s);
+    li.addEventListener("click", () => { selectionner(m.idx, premiereVide(m)); });
+    document.getElementById("defs-" + m.sens).appendChild(li);
+    lignesDef.set(m.idx, li);
+  });
+
+  let courant = ordre[0].idx, curseur = mots[ordre[0].idx].cases[0];
+
+  function premiereVide(m) { return m.cases.find((id) => !cases.get(id).lettre) ?? m.cases[0]; }
+
+  function selectionner(idx, id) {
+    courant = idx;
+    curseur = id ?? mots[idx].cases[0];
+    afficher();
+    focaliser();
+  }
+  function focaliser() {
+    const cs = cases.get(curseur);
+    saisie.style.top = "calc(var(--c) * " + cs.r + ")";
+    saisie.style.left = "calc(var(--c) * " + cs.c + ")";
+    saisie.value = "_";
+    saisie.focus({ preventScroll: true });
+    try { saisie.setSelectionRange(1, 1); } catch (e) { /* ignoré */ }
+    const el = elements.get(curseur);
+    if (el.scrollIntoView) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
+  function toucher(id) {
+    const cs = cases.get(id);
+    const sens = mots[courant].sens;
+    if (id === curseur && Object.keys(cs.mots).length === 2) {
+      selectionner(cs.mots[sens === "H" ? "V" : "H"], id);
+    } else {
+      selectionner(cs.mots[sens] ?? Object.values(cs.mots)[0], id);
+    }
+  }
+
+  function afficher() {
+    const m = mots[courant];
+    const dansMot = new Set(m.cases);
+    cases.forEach((cs, id) => {
+      const el = elements.get(id);
+      el.querySelector(".lettre").textContent = cs.lettre;
+      el.classList.toggle("mot", dansMot.has(id));
+      el.classList.toggle("cur", id === curseur);
+      el.classList.toggle("faux", cs.etat === "faux");
+      el.classList.toggle("revele", cs.etat === "revele");
+      const nums = [cs.mots.H, cs.mots.V].filter((x) => x !== undefined).map((i) => mots[i]);
+      el.setAttribute("aria-label", nums.map((w) => w.numero + w.sens).join(" ") + (cs.lettre ? " : " + cs.lettre : " : vide"));
+    });
+    lignesDef.forEach((li, idx) => {
+      li.classList.toggle("active", idx === courant);
+      li.classList.toggle("fini", mots[idx].cases.every((id) => cases.get(id).lettre));
+    });
+    const bar = document.getElementById("def-courante");
+    bar.innerHTML = "";
+    const k = document.createElement("span"); k.className = "cle"; k.textContent = m.numero + " " + NOM[m.sens];
+    const t = document.createElement("span"); t.textContent = (m.definition || "…") + " (" + m.longueur + ")";
+    bar.append(k, t);
+    const li = lignesDef.get(courant), sec = li.closest("section");
+    if (sec && sec.scrollHeight > sec.clientHeight) {
+      const haut = li.offsetTop - sec.offsetTop;
+      if (haut < sec.scrollTop || haut + li.offsetHeight > sec.scrollTop + sec.clientHeight)
+        sec.scrollTop = haut - sec.clientHeight / 3;
+    }
+  }
+
+  function ecrire(lettre) {
+    const cs = cases.get(curseur);
+    if (cs.etat !== "revele") { cs.lettre = lettre; cs.etat = ""; }
+    const m = mots[courant], i = m.cases.indexOf(curseur);
+    if (i < m.cases.length - 1) curseur = m.cases[i + 1];
+    else motSuivant(1, true);
+    apresChangement();
+  }
+  function effacerArriere() {
+    const cs = cases.get(curseur);
+    const m = mots[courant], i = m.cases.indexOf(curseur);
+    if (cs.lettre && cs.etat !== "revele") { cs.lettre = ""; cs.etat = ""; }
+    else if (i > 0) {
+      curseur = m.cases[i - 1];
+      const p = cases.get(curseur);
+      if (p.etat !== "revele") { p.lettre = ""; p.etat = ""; }
+    }
+    apresChangement();
+  }
+  function motSuivant(pas, vide) {
+    let j = ordre.findIndex((m) => m.idx === courant);
+    for (let n = 0; n < ordre.length; n++) {
+      j = (j + pas + ordre.length) % ordre.length;
+      const m = ordre[j];
+      if (!vide || m.cases.some((id) => !cases.get(id).lettre)) { courant = m.idx; curseur = premiereVide(m); return; }
+    }
+  }
+  function deplacer(dr, dc) {
+    let r = cases.get(curseur).r + dr, c = cases.get(curseur).c + dc;
+    while (r >= 0 && c >= 0 && r < Hh && c < L) {
+      const id = cle(r, c);
+      if (cases.has(id)) {
+        const sens = dr ? "V" : "H";
+        const cs = cases.get(id);
+        courant = cs.mots[sens] ?? cs.mots[mots[courant].sens] ?? Object.values(cs.mots)[0];
+        curseur = id;
+        return;
+      }
+      r += dr; c += dc;
+    }
+  }
+  function apresChangement() { sauver(); afficher(); focaliser(); verifierFin(); }
+
+  const normaliser = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase()
+    .replace(/Œ/g, "OE").replace(/Æ/g, "AE").replace(/[^A-Z]/g, "");
+
+  saisie.addEventListener("keydown", (e) => {
+    const fleches = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
+    if (e.key in fleches) { e.preventDefault(); deplacer(...fleches[e.key]); afficher(); focaliser(); }
+    else if (e.key === "Backspace" || e.key === "Delete") { e.preventDefault(); effacerArriere(); }
+    else if (e.key === "Tab" || e.key === "Enter") { e.preventDefault(); motSuivant(e.shiftKey ? -1 : 1, false); afficher(); focaliser(); }
+    else if (e.key === " ") { e.preventDefault(); toucher(curseur); }
+    else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const l = normaliser(e.key);
+      e.preventDefault();
+      if (l) ecrire(l[0]);
+    }
+  });
+  // claviers virtuels (Android, iOS) : pas de keydown fiable, on lit le champ
+  saisie.addEventListener("input", () => {
+    const v = saisie.value;
+    if (v.length === 0) effacerArriere();
+    else for (const l of normaliser(v.replace(/^_/, ""))) ecrire(l);
+    saisie.value = "_";
+  });
+
+  document.getElementById("prec").addEventListener("click", () => { motSuivant(-1, false); afficher(); focaliser(); });
+  document.getElementById("suiv").addEventListener("click", () => { motSuivant(1, false); afficher(); focaliser(); });
+  document.getElementById("def-courante").addEventListener("click", () => toucher(curseur));
+
+  const message = document.getElementById("message");
+  function dire(texte, ok) { message.textContent = texte; message.style.color = ok ? "var(--ok)" : "var(--doux)"; }
+  function marquer(ids) {
+    let fautes = 0;
+    ids.forEach((id) => {
+      const cs = cases.get(id), s = solution[id];
+      if (cs.lettre && cs.lettre !== s) { cs.etat = "faux"; fautes++; }
+    });
+    return fautes;
+  }
+  function verifierFin() {
+    const pleine = [...cases.values()].every((cs) => cs.lettre);
+    if (!pleine) { if (message.dataset.fin) { dire(""); delete message.dataset.fin; } return; }
+    message.dataset.fin = "1";
+    if (!solution) dire("Grille remplie.", true);
+    else if ([...cases.entries()].every(([id, cs]) => cs.lettre === solution[id])) dire("Bravo, grille résolue !", true);
+    else dire("Grille remplie, mais il reste des erreurs.", false);
+  }
+
+  document.querySelector(".outils").addEventListener("click", (e) => {
+    const action = e.target.dataset && e.target.dataset.action;
+    if (!action) return;
+    const m = mots[courant];
+    if (action === "effacer") {
+      if (!confirmerEffacement()) return;
+      cases.forEach((cs) => { cs.lettre = ""; cs.etat = ""; });
+      dire("");
+    } else if (action === "verifier-mot") {
+      const f = marquer(m.cases);
+      dire(f ? f + " lettre(s) fausse(s)." : m.cases.every((id) => cases.get(id).lettre) ? "Mot correct !" : "Pas d'erreur pour l'instant.", !f);
+    } else if (action === "verifier") {
+      const f = marquer([...cases.keys()]);
+      dire(f ? f + " lettre(s) fausse(s)." : "Aucune erreur.", !f);
+    } else if (action === "reveler-lettre") {
+      const cs = cases.get(curseur);
+      cs.lettre = solution[curseur]; cs.etat = "revele";
+    } else if (action === "reveler-mot") {
+      m.cases.forEach((id) => { const cs = cases.get(id); if (cs.lettre !== solution[id]) { cs.lettre = solution[id]; cs.etat = "revele"; } });
+    }
+    sauver(); afficher(); focaliser(); verifierFin();
+  });
+  // confirmation sans boîte de dialogue bloquante : second appui dans les 3 s
+  let armement = 0;
+  function confirmerEffacement() {
+    const bouton = document.querySelector('[data-action="effacer"]');
+    if (Date.now() - armement < 3000) { armement = 0; bouton.textContent = "Effacer"; return true; }
+    armement = Date.now();
+    bouton.textContent = "Confirmer ?";
+    setTimeout(() => { bouton.textContent = "Effacer"; }, 3000);
+    return false;
+  }
+  if (!solution) document.querySelectorAll(".outils button:not([data-action=effacer])").forEach((b) => b.remove());
+
+  afficher();
+  verifierFin();
+})();
+</script>
+</body>
+</html>
